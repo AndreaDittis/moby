@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/docker/docker/daemon/config"
 	"github.com/docker/docker/libcontainerd/supervisor"
+	"github.com/docker/docker/pkg/system"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/windows"
 )
@@ -89,4 +91,10 @@ func wrapListeners(proto string, ls []net.Listener) []net.Listener {
 
 func newCgroupParent(config *config.Config) string {
 	return ""
+}
+
+func (cli *DaemonCli) initContainerD() (context.Context, context.CancelFunc, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	system.InitContainerdRuntime(cli.Config.Experimental, cli.Config.ContainerdAddr)
+	return ctx, cancel, nil
 }
