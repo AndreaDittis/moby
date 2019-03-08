@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	vhd "github.com/Microsoft/go-winio/vhd"
 	"github.com/Microsoft/hcsshim/cmd/containerd-shim-runhcs-v1/options"
 	"github.com/containerd/containerd"
 	apievents "github.com/containerd/containerd/api/events"
@@ -314,6 +315,18 @@ func (c *client) Start(ctx context.Context, id, checkpointDir string, withStdin 
 		}
 		return -1, wrapError(err)
 	}
+
+	// Test hack
+	path := spec.Windows.LayerFolders[len(spec.Windows.LayerFolders)-1]
+
+	handle, err := vhd.VhdWriteCacheModeDisableFlushing(path)
+	if err != nil {
+		return -1, wrapError((err))
+	}
+	defer func() {
+		vhd.VhdWriteCacheModeCacheMetadata(handle)
+		syscall.CloseHandle(handle)
+	}()
 
 	ctr.setTask(t)
 
