@@ -3,6 +3,7 @@ package remote // import "github.com/docker/docker/libcontainerd/remote"
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -284,7 +285,8 @@ func (c *client) Start(ctx context.Context, id, checkpointDir string, withStdin 
 		return -1, errors.Wrap(err, "failed to retrieve spec")
 	}
 	// Test hack
-	path := spec.Windows.LayerFolders[len(spec.Windows.LayerFolders)-1]
+	path := filepath.Join(spec.Windows.LayerFolders[len(spec.Windows.LayerFolders)-1], "sandbox.vhdx")
+	fmt.Println("going to open", path)
 
 	handle, err := vhd.VhdWriteCacheModeDisableFlushing(path)
 	if err != nil {

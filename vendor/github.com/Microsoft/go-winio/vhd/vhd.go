@@ -3,7 +3,6 @@
 package vhd
 
 import (
-	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -71,8 +70,8 @@ type createVirtualDiskParameters struct {
 }
 
 type openVersion2 struct {
-	GetInfoOnly    bool
-	ReadOnly       bool
+	GetInfoOnly    int32    // bool
+	ReadOnly       int32    // bool
 	ResiliencyGUID [16]byte // GUID
 }
 
@@ -84,6 +83,7 @@ type openVirtualDiskParameters struct {
 type storageSetSurfaceCachePolicyRequest struct {
 	RequestLevel uint32
 	CacheMode    uint16
+	pad          uint16
 }
 
 // CreateVhdx will create a simple vhdx file at the given path using default values.
@@ -148,13 +148,10 @@ func DetachVhd(path string) error {
 // It returns a handle which should be kept open during (for example) container start,
 // and restored using VhdWriteCacheModeCacheMetadata.
 func VhdWriteCacheModeDisableFlushing(path string) (syscall.Handle, error) {
-	fmt.Println("1")
 	handle, err := openVhd(path)
-	fmt.Println("2", handle, err)
 	if err != nil {
 		return 0, err
 	}
-	fmt.Println("3")
 	if err := ioctlStorageSetSurfaceCachePolicy(handle, vhdWriteCacheModeDisableFlushing); err != nil {
 		syscall.CloseHandle(handle)
 		return 0, err
@@ -169,17 +166,18 @@ func VhdWriteCacheModeCacheMetadata(handle syscall.Handle) error {
 
 // openVhd is a wrapper for getting a handle to a VHD.
 func openVhd(path string) (syscall.Handle, error) {
+	return 0, nil
 	var (
 		defaultType virtualStorageType
 		handle      syscall.Handle
 	)
-	parameters := openVirtualDiskParameters{Version: 2}
 
+	parameters := openVirtualDiskParameters{Version: 2}
 	if err := openVirtualDisk(
 		&defaultType,
 		path,
 		virtualDiskAccessNONE,
-		0, //openVirtualDiskFlagCACHEDIO|openVirtualDiskFlagIGNORERELATIVEPARENTLOCATOR,
+		openVirtualDiskFlagPARENTCACHEDIO|openVirtualDiskFlagIGNORERELATIVEPARENTLOCATOR,
 		&parameters,
 		&handle); err != nil {
 		return 0, err
@@ -189,6 +187,7 @@ func openVhd(path string) (syscall.Handle, error) {
 }
 
 func ioctlStorageSetSurfaceCachePolicy(handle syscall.Handle, cacheMode uint16) error {
+	return nil
 	request := storageSetSurfaceCachePolicyRequest{
 		RequestLevel: 1,
 		CacheMode:    cacheMode,
