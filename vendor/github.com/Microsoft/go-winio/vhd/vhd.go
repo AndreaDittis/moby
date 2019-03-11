@@ -3,6 +3,7 @@
 package vhd
 
 import (
+	"fmt"
 	"syscall"
 	"unsafe"
 )
@@ -147,10 +148,13 @@ func DetachVhd(path string) error {
 // It returns a handle which should be kept open during (for example) container start,
 // and restored using VhdWriteCacheModeCacheMetadata.
 func VhdWriteCacheModeDisableFlushing(path string) (syscall.Handle, error) {
+	fmt.Println("1")
 	handle, err := openVhd(path)
+	fmt.Println("2", handle, err)
 	if err != nil {
 		return 0, err
 	}
+	fmt.Println("3")
 	if err := ioctlStorageSetSurfaceCachePolicy(handle, vhdWriteCacheModeDisableFlushing); err != nil {
 		syscall.CloseHandle(handle)
 		return 0, err
@@ -160,7 +164,7 @@ func VhdWriteCacheModeDisableFlushing(path string) (syscall.Handle, error) {
 
 // VhdWriteCacheModeCacheMetadata sets a VHDs surface cache policy to cache metadata
 func VhdWriteCacheModeCacheMetadata(handle syscall.Handle) error {
-	return ioctlStorageSetSurfaceCachePolicy(handle, vhdWriteCacheModeDisableFlushing)
+	return ioctlStorageSetSurfaceCachePolicy(handle, vhdWriteCacheModeCacheMetadata)
 }
 
 // openVhd is a wrapper for getting a handle to a VHD.
@@ -175,7 +179,7 @@ func openVhd(path string) (syscall.Handle, error) {
 		&defaultType,
 		path,
 		virtualDiskAccessNONE,
-		openVirtualDiskFlagCACHEDIO|openVirtualDiskFlagIGNORERELATIVEPARENTLOCATOR,
+		0, //openVirtualDiskFlagCACHEDIO|openVirtualDiskFlagIGNORERELATIVEPARENTLOCATOR,
 		&parameters,
 		&handle); err != nil {
 		return 0, err

@@ -283,6 +283,18 @@ func (c *client) Start(ctx context.Context, id, checkpointDir string, withStdin 
 	if err != nil {
 		return -1, errors.Wrap(err, "failed to retrieve spec")
 	}
+	// Test hack
+	path := spec.Windows.LayerFolders[len(spec.Windows.LayerFolders)-1]
+
+	handle, err := vhd.VhdWriteCacheModeDisableFlushing(path)
+	if err != nil {
+		return -1, wrapError((err))
+	}
+	defer func() {
+		vhd.VhdWriteCacheModeCacheMetadata(handle)
+		syscall.CloseHandle(handle)
+	}()
+
 	uid, gid := getSpecUser(spec)
 	t, err = ctr.ctr.NewTask(ctx,
 		func(id string) (cio.IO, error) {
@@ -315,18 +327,6 @@ func (c *client) Start(ctx context.Context, id, checkpointDir string, withStdin 
 		}
 		return -1, wrapError(err)
 	}
-
-	// Test hack
-	path := spec.Windows.LayerFolders[len(spec.Windows.LayerFolders)-1]
-
-	handle, err := vhd.VhdWriteCacheModeDisableFlushing(path)
-	if err != nil {
-		return -1, wrapError((err))
-	}
-	defer func() {
-		vhd.VhdWriteCacheModeCacheMetadata(handle)
-		syscall.CloseHandle(handle)
-	}()
 
 	ctr.setTask(t)
 
